@@ -1,0 +1,234 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Users - NV Poultry Farm{% endblock %}
+
+{% block extra_css %}
+<style>
+    .user-card {
+        transition: all 0.3s ease;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .user-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    .action-buttons .btn {
+        margin: 0 5px;
+    }
+    @media (max-width: 768px) {
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .action-buttons .btn {
+            margin: 2px 0;
+            width: 100%;
+        }
+        .user-list {
+            margin-top: 2rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Add/Edit User Form -->
+        <div class="col-12 col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0" id="formTitle">Add New User</h5>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                    <form method="POST" id="userForm">
+                        {% csrf_token %}
+                        <input type="hidden" id="user_id" name="user_id">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="username" name="username" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="first_name" class="form-label">First Name</label>
+                            <input type="text" class="form-control" id="first_name" name="first_name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="last_name" class="form-label">Last Name</label>
+                            <input type="text" class="form-control" id="last_name" name="last_name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="group" class="form-label">Group</label>
+                            <select class="form-select" id="group" name="group" required>
+                                <option value="">Select a group</option>
+                                {% for group in groups %}
+                                    <option value="{{ group.id }}">{{ group.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="password-fields">
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Password</label>
+                                <input type="password" class="form-control" id="password" name="password">
+                            </div>
+                            <div class="mb-3">
+                                <label for="confirm_password" class="form-label">Confirm Password</label>
+                                <input type="password" class="form-control" id="confirm_password" name="confirm_password">
+                            </div>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary" id="submitBtn">Create User</button>
+                            <button type="button" class="btn btn-secondary" id="resetBtn" style="display: none;">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- User List -->
+        <div class="col-12 col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">User List</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Full Name</th>
+                                    <th>Email</th>
+                                    <th>Group</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in users %}
+                                <tr>
+                                    <td>{{ user.username }}</td>
+                                    <td>{{ user.get_full_name }}</td>
+                                    <td>{{ user.email }}</td>
+                                    <td>{{ user.groups.first.name|default:"No Group" }}</td>
+                                    <td class="action-buttons">
+                                        <button class="btn btn-sm btn-primary edit-user" data-id="{{ user.id }}">
+                                            <i class="fas fa-edit"></i> Edit
+                                        </button>
+                                        <button class="btn btn-sm btn-danger delete-user" data-id="{{ user.id }}" 
+                                                data-username="{{ user.username }}">
+                                            <i class="fas fa-trash"></i> Delete
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to delete user <span id="deleteUserName"></span>?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="delete">
+                    <input type="hidden" name="user_id" id="deleteUserId">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Edit User
+    document.querySelectorAll('.edit-user').forEach(button => {
+        button.addEventListener('click', function() {
+            const userId = this.dataset.id;
+            fetch(`/get-user/${userId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('user_id').value = data.id;
+                    document.getElementById('username').value = data.username;
+                    document.getElementById('first_name').value = data.first_name;
+                    document.getElementById('last_name').value = data.last_name;
+                    document.getElementById('email').value = data.email;
+                    document.getElementById('group').value = data.group_id;
+                    
+                    // Hide password fields for edit
+                    document.querySelectorAll('.password-fields input').forEach(input => {
+                        input.required = false;
+                    });
+                    document.querySelector('.password-fields').style.display = 'none';
+                    
+                    // Update form appearance
+                    document.getElementById('formTitle').textContent = 'Edit User';
+                    document.getElementById('submitBtn').textContent = 'Update User';
+                    document.getElementById('resetBtn').style.display = 'block';
+                    
+                    // Scroll to form on mobile
+                    if (window.innerWidth < 768) {
+                        document.querySelector('.card').scrollIntoView({ behavior: 'smooth' });
+                    }
+                });
+        });
+    });
+
+    // Delete User
+    document.querySelectorAll('.delete-user').forEach(button => {
+        button.addEventListener('click', function() {
+            const userId = this.dataset.id;
+            const username = this.dataset.username;
+            document.getElementById('deleteUserId').value = userId;
+            document.getElementById('deleteUserName').textContent = username;
+            new bootstrap.Modal(document.getElementById('deleteModal')).show();
+        });
+    });
+
+    // Reset Form
+    document.getElementById('resetBtn').addEventListener('click', function() {
+        document.getElementById('userForm').reset();
+        document.getElementById('user_id').value = '';
+        document.getElementById('formTitle').textContent = 'Add New User';
+        document.getElementById('submitBtn').textContent = 'Create User';
+        this.style.display = 'none';
+        
+        // Show password fields
+        document.querySelectorAll('.password-fields input').forEach(input => {
+            input.required = true;
+        });
+        document.querySelector('.password-fields').style.display = 'block';
+    });
+});
+</script>
+{% endblock %}

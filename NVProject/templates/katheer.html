@@ -1,0 +1,989 @@
+{% extends 'base.html' %}
+
+{% block title %}katheer - NV Poultry Farm{% endblock %}
+
+{% block content %}
+<!-- Messages Section -->
+<div id="message-container" style="position: fixed; top: 20px; right: 20px; z-index: 1000;">
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert" style="margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                {% if message.tags == 'success' %}
+                    <i class="fas fa-check-circle me-2"></i>
+                {% elif message.tags == 'error' %}
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                {% endif %}
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+</div>
+
+<div class="mdc-layout-grid__cell stretch-card mdc-layout-grid__cell--span-12">
+    <div class="mdc-card p-3" style="border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); background-image: url('https://www.shutterstock.com/image-photo/hen-farmyard-gallus-domesticus-600nw-1160520304.jpg'); background-size: cover; background-position: center; position: relative;">
+        <!-- Overlay for better readability -->
+        <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255, 255, 255, 0.70); border-radius: 12px;"></div>
+        
+        <div style="position: relative; z-index: 1;">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="card-title mb-0" style="color: #2c5282; font-weight: 700;">Daily Poultry Data Entry - katheer</h4>
+                <div class="d-flex align-items-center">
+                    <div class="me-3">
+                        <input type="date" id="record-date" class="form-control" style="border-radius: 6px;">
+                    </div>
+                    <button type="button" id="fetch-record" class="btn btn-primary" onclick="fetchRecord()">
+                        <i class="fas fa-edit me-1"></i> Edit Record
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tab navigation -->
+            <ul class="nav nav-tabs mb-3" id="poultryTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="feed-tab" data-bs-toggle="tab" data-bs-target="#feed" type="button"
+                        role="tab" style="color: #805ad5;">
+                        <i class="fas fa-utensils me-1"></i>Feed
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="eggs-tab" data-bs-toggle="tab" data-bs-target="#eggs" type="button"
+                        role="tab" style="color: #d69e2e;">
+                        <i class="fas fa-egg me-1"></i>Egg Collection
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="equipment-tab" data-bs-toggle="tab" data-bs-target="#equipment"
+                        type="button" role="tab" style="color: #38a169;">
+                        <i class="fas fa-tools me-1"></i>Equipment
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="other-tab" data-bs-toggle="tab" data-bs-target="#other" type="button"
+                        role="tab" style="color: #e53e3e;">
+                        <i class="fas fa-clipboard-list me-1"></i>Other Metrics
+                    </button>
+                </li>
+            </ul>
+
+            <form method="POST" action="">
+                {% csrf_token %}
+                <input type="hidden" name="date" id="selected-date">
+
+                <!-- Tab content -->
+                <div class="tab-content" id="poultryTabsContent">
+                    <!-- Feed & Water Tab - FIRST TAB -->
+                    <div class="tab-pane fade show active" id="feed" role="tabpanel">
+                        <div class="row">
+                            <!-- Male Birds Feed Intake -->
+                            <div class="col-md-6 mb-2">
+                                <div class="section-header">
+                                    <i class="fas fa-utensils me-2" style="color: #4299e1;"></i>
+                                    <h6 style="color: #2c5282;">Male Birds - Feed Intake (KG)</h6>
+                                </div>
+                                <div class="form-group">
+                                    <label style="color: #2c5282;"><i class="fas fa-sun me-1 text-warning"></i> Morning</label>
+                                    <div style="display: flex; gap: 10px; align-items: flex-start;">
+                                        <div style="flex: 1;">
+                                            <div style="text-align: center; background-color: #f5f5f5; padding: 10px; border-radius: 6px; margin-bottom: 8px;">
+                                                <div style="font-size: 0.85rem; color: #666; margin-bottom: 4px;">Bundles</div>
+                                                <input type="number" step="0.01" id="feed_male_morning_bundles" style="text-align: center; font-weight: 700; color: #4299e1; background-color: #fff; border: 1px solid #e2e8f0; border-radius: 4px; padding: 8px; font-size: 0.95rem; width: 100%;" oninput="calculateFeedFromBundles('male_morning')" placeholder="Bundles">
+                                            </div>
+                                            <input type="hidden" name="feed_male_morning_bundles" id="feed_male_morning_bundles_hidden">
+                                        </div>
+                                        <div style="flex: 2;">
+                                            <input type="number" step="0.01" name="feed_male_morning"
+                                                class="form-control form-control-sm input-field feed-input" id="feed_male_morning" oninput="calculateBundles()" placeholder="Enter KG">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label style="color: #2c5282;"><i class="fas fa-moon me-1 text-secondary"></i> Evening</label>
+                                    <div style="display: flex; gap: 10px; align-items: flex-start;">
+                                        <div style="flex: 1;">
+                                            <div style="text-align: center; background-color: #f5f5f5; padding: 10px; border-radius: 6px; margin-bottom: 8px;">
+                                                <div style="font-size: 0.85rem; color: #666; margin-bottom: 4px;">Bundles</div>
+                                                <input type="number" step="0.01" id="feed_male_evening_bundles" style="text-align: center; font-weight: 700; color: #4299e1; background-color: #fff; border: 1px solid #e2e8f0; border-radius: 4px; padding: 8px; font-size: 0.95rem; width: 100%;" oninput="calculateFeedFromBundles('male_evening')" placeholder="Bundles">
+                                            </div>
+                                            <input type="hidden" name="feed_male_evening_bundles" id="feed_male_evening_bundles_hidden">
+                                        </div>
+                                        <div style="flex: 2;">
+                                            <input type="number" step="0.01" name="feed_male_evening"
+                                                class="form-control form-control-sm input-field feed-input" id="feed_male_evening" oninput="calculateBundles()" placeholder="Enter KG">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group" style="background-color: #f5f5f5; padding: 12px; border-radius: 6px; margin-top: 15px; border-left: 4px solid #4299e1; display: flex; gap: 15px;">
+                                    <div style="flex: 1;">
+                                        <label style="color: #2c5282; font-weight: 700; margin-bottom: 8px; display: block;">Total Bundles</label>
+                                        <input type="text" id="feed_male_total_bundles" readonly style="text-align: center; font-weight: 700; color: #4299e1; background-color: #fff; border: 2px solid #4299e1; border-radius: 4px; padding: 10px; font-size: 1.1rem; width: 100%;">
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <label style="color: #2c5282; font-weight: 700; margin-bottom: 8px; display: block;">Total KG</label>
+                                        <input type="text" id="feed_male_total_kg" readonly style="text-align: center; font-weight: 700; color: #4299e1; background-color: #fff; border: 2px solid #4299e1; border-radius: 4px; padding: 10px; font-size: 1.1rem; width: 100%;">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Female Birds Feed Intake -->
+                            <div class="col-md-6 mb-2">
+                                <div class="section-header">
+                                    <i class="fas fa-utensils me-2" style="color: #d69e2e;"></i>
+                                    <h6 style="color: #7c2d12;">Female Birds - Feed Intake (KG)</h6>
+                                </div>
+                                <div class="form-group">
+                                    <label style="color: #7c2d12;"><i class="fas fa-sun me-1 text-warning"></i> Morning</label>
+                                    <div style="display: flex; gap: 10px; align-items: flex-start;">
+                                        <div style="flex: 1;">
+                                            <div style="text-align: center; background-color: #f5f5f5; padding: 10px; border-radius: 6px; margin-bottom: 8px;">
+                                                <div style="font-size: 0.85rem; color: #666; margin-bottom: 4px;">Bundles</div>
+                                                <input type="number" step="0.01" id="feed_female_morning_bundles" style="text-align: center; font-weight: 700; color: #d69e2e; background-color: #fff; border: 1px solid #e2e8f0; border-radius: 4px; padding: 8px; font-size: 0.95rem; width: 100%;" oninput="calculateFeedFromBundles('female_morning')" placeholder="Bundles">
+                                            </div>
+                                            <input type="hidden" name="feed_female_morning_bundles" id="feed_female_morning_bundles_hidden">
+                                        </div>
+                                        <div style="flex: 2;">
+                                            <input type="number" step="0.01" name="feed_female_morning"
+                                                class="form-control form-control-sm input-field feed-input" id="feed_female_morning" oninput="calculateBundles()" placeholder="Enter KG">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label style="color: #7c2d12;"><i class="fas fa-moon me-1 text-secondary"></i> Evening</label>
+                                    <div style="display: flex; gap: 10px; align-items: flex-start;">
+                                        <div style="flex: 1;">
+                                            <div style="text-align: center; background-color: #f5f5f5; padding: 10px; border-radius: 6px; margin-bottom: 8px;">
+                                                <div style="font-size: 0.85rem; color: #666; margin-bottom: 4px;">Bundles</div>
+                                                <input type="number" step="0.01" id="feed_female_evening_bundles" style="text-align: center; font-weight: 700; color: #d69e2e; background-color: #fff; border: 1px solid #e2e8f0; border-radius: 4px; padding: 8px; font-size: 0.95rem; width: 100%;" oninput="calculateFeedFromBundles('female_evening')" placeholder="Bundles">
+                                            </div>
+                                            <input type="hidden" name="feed_female_evening_bundles" id="feed_female_evening_bundles_hidden">
+                                        </div>
+                                        <div style="flex: 2;">
+                                            <input type="number" step="0.01" name="feed_female_evening"
+                                                class="form-control form-control-sm input-field feed-input" id="feed_female_evening" oninput="calculateBundles()" placeholder="Enter KG">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group" style="background-color: #f5f5f5; padding: 12px; border-radius: 6px; margin-top: 15px; border-left: 4px solid #d69e2e; display: flex; gap: 15px;">
+                                    <div style="flex: 1;">
+                                        <label style="color: #7c2d12; font-weight: 700; margin-bottom: 8px; display: block;">Total Bundles</label>
+                                        <input type="text" id="feed_female_total_bundles" readonly style="text-align: center; font-weight: 700; color: #d69e2e; background-color: #fff; border: 2px solid #d69e2e; border-radius: 4px; padding: 10px; font-size: 1.1rem; width: 100%;">
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <label style="color: #7c2d12; font-weight: 700; margin-bottom: 8px; display: block;">Total KG</label>
+                                        <input type="text" id="feed_female_total_kg" readonly style="text-align: center; font-weight: 700; color: #d69e2e; background-color: #fff; border: 2px solid #d69e2e; border-radius: 4px; padding: 10px; font-size: 1.1rem; width: 100%;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Egg Collection Tab -->
+                    <div class="tab-pane fade" id="eggs" role="tabpanel">
+                        <div class="row">
+                            <div class="col-md-6 mb-2">
+                                <div class="section-header">
+                                    <i class="fas fa-sun me-2 text-warning"></i>
+                                    <h6 style="color: #b7791f;">Afternoon Collection</h6>
+                                </div>
+                                <div class="form-group">
+                                    <label style="color: #d69e2e;">No of Tray Eggs</label>
+                                    <input type="number" step="0.01" name="tray_egg_morning" id="tray_egg_morning" class="form-control form-control-sm input-field" oninput="calculateMorningEggs('from_tray')">
+                                </div>
+                                <div class="form-group">
+                                    <label style="color: #d69e2e;">Total Eggs</label>
+                                    <input type="number" step="0.01" name="total_egg_morning" id="total_egg_morning" class="form-control form-control-sm input-field" oninput="calculateMorningEggs('from_total')">
+                                </div>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <div class="form-group">
+                                            <label style="color: #d69e2e;">Damaged</label>
+                                            <input type="number" name="damaged_egg_morning"
+                                                class="form-control form-control-sm input-field">
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="form-group">
+                                            <label style="color: #d69e2e;">Double</label>
+                                            <input type="number" name="double_egg_morning"
+                                                class="form-control form-control-sm input-field">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 mb-2">
+                                <div class="section-header">
+                                    <i class="fas fa-moon me-2 text-secondary"></i>
+                                    <h6 style="color: #b7791f;">Evening Collection</h6>
+                                </div>
+                                <div class="form-group">
+                                    <label style="color: #d69e2e;">No of Tray Eggs</label>
+                                    <input type="number" step="0.01" name="tray_egg_evening" id="tray_egg_evening" class="form-control form-control-sm input-field" oninput="calculateEveningEggs('from_tray')">
+                                </div>
+                                <div class="form-group">
+                                    <label style="color: #d69e2e;">Total Eggs</label>
+                                    <input type="number" step="0.01" name="total_egg_evening" id="total_egg_evening" class="form-control form-control-sm input-field" oninput="calculateEveningEggs('from_total')">
+                                </div>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <div class="form-group">
+                                            <label style="color: #d69e2e;">Damaged</label>
+                                            <input type="number" name="damaged_egg_evening"
+                                                class="form-control form-control-sm input-field">
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="form-group">
+                                            <label style="color: #d69e2e;">Double</label>
+                                            <input type="number" name="double_egg_evening"
+                                                class="form-control form-control-sm input-field">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Equipment Tab -->
+                    <div class="tab-pane fade" id="equipment" role="tabpanel">
+                        <div class="row">
+                            <!-- Artificial Insemination -->
+                            <div class="col-md-6 mb-3">
+                                <div class="equipment-card">
+                                    <div class="form-group">
+                                        <label style="color: #38a169;"><i class="fas fa-syringe me-2" style="color: #805ad5;"></i>Artificial Insemination</label>
+                                        <div>
+                                            <div class="form-check form-check-inline">
+                                                <input class="form-check-input" type="radio" name="artificial_insemination"
+                                                    value="No" id="ai_no" checked onchange="toggleInput('ai')">
+                                                <label class="form-check-label" for="ai_no" style="color: #38a169;">No</label>
+                                            </div>
+                                            <div class="form-check form-check-inline">
+                                                <input class="form-check-input" type="radio" name="artificial_insemination"
+                                                    value="Yes" id="ai_yes" onchange="toggleInput('ai')">
+                                                <label class="form-check-label" for="ai_yes" style="color: #38a169;">Yes</label>
+                                            </div>
+                                            <div style="margin-top: 10px;">
+                                                <input type="number" step="0.01" name="ai_hours"
+                                                    class="form-control form-control-sm mt-2 input-field" placeholder="Hours"
+                                                    style="display: none;" id="ai_hours" disabled>
+                                                <input type="number" name="ai_birds_count"
+                                                    class="form-control form-control-sm mt-2 input-field" placeholder="Birds Count"
+                                                    style="display: none;" id="ai_birds_count" disabled>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Fogger -->
+                            <div class="col-md-6 mb-3">
+                                <div class="equipment-card">
+                                    <div class="form-group">
+                                        <label style="color: #38a169;"><i class="fas fa-wind me-2" style="color: #4299e1;"></i>Fogger Used</label>
+                                        <div>
+                                            <div class="form-check form-check-inline">
+                                                <input class="form-check-input" type="radio" name="fogger_used" value="No"
+                                                    id="fogger_no" checked onchange="toggleInput('fogger')">
+                                                <label class="form-check-label" for="fogger_no" style="color: #38a169;">No</label>
+                                            </div>
+                                            <div class="form-check form-check-inline">
+                                                <input class="form-check-input" type="radio" name="fogger_used" value="Yes"
+                                                    id="fogger_yes" onchange="toggleInput('fogger')">
+                                                <label class="form-check-label" for="fogger_yes" style="color: #38a169;">Yes</label>
+                                            </div>
+                                            <input type="number" step="0.01" name="fogger_hours"
+                                                class="form-control form-control-sm mt-2 input-field" placeholder="Hours"
+                                                style="display: none;" id="fogger_hours" disabled>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Fan -->
+                            <div class="col-md-6 mb-3">
+                                <div class="equipment-card">
+                                    <div class="form-group">
+                                        <label style="color: #38a169;"><i class="fas fa-fan me-2" style="color: #38a169;"></i>Fan Used</label>
+                                        <div>
+                                            <div class="form-check form-check-inline">
+                                                <input class="form-check-input" type="radio" name="fan_used" value="No"
+                                                    id="fan_no" checked onchange="toggleInput('fan')">
+                                                <label class="form-check-label" for="fan_no" style="color: #38a169;">No</label>
+                                            </div>
+                                            <div class="form-check form-check-inline">
+                                                <input class="form-check-input" type="radio" name="fan_used" value="Yes"
+                                                    id="fan_yes" onchange="toggleInput('fan')">
+                                                <label class="form-check-label" for="fan_yes" style="color: #38a169;">Yes</label>
+                                            </div>
+                                            <input type="number" step="0.01" name="fan_hours"
+                                                class="form-control form-control-sm mt-2 input-field" placeholder="Hours"
+                                                style="display: none;" id="fan_hours" disabled>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- light -->
+                            <div class="col-md-6 mb-3">
+                                <div class="equipment-card">
+                                    <div class="form-group">
+                                        <label style="color: #38a169;"><i class="fas fa-lightbulb me-2" style="color: #38a169;"></i>Light Used</label>
+                                        <div>
+                                            <div class="form-check form-check-inline">
+                                                <input class="form-check-input" type="radio" name="light_used" value="No"
+                                                    id="light_no" checked onchange="toggleInput('light')">
+                                                <label class="form-check-label" for="light_no" style="color: #38a169;">No</label>
+                                            </div>
+                                            <div class="form-check form-check-inline">
+                                                <input class="form-check-input" type="radio" name="light_used" value="Yes"
+                                                    id="light_yes" onchange="toggleInput('light')">
+                                                <label class="form-check-label" for="light_yes" style="color: #38a169;">Yes</label>
+                                            </div>
+                                            <input type="number" step="0.01" name="light_hours"
+                                                class="form-control form-control-sm mt-2 input-field" placeholder="Hours"
+                                                style="display: none;" id="light_hours" disabled>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Other Metrics Tab -->
+                    <div class="tab-pane fade" id="other" role="tabpanel">
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="form-group">
+                                    <label style="color: #e53e3e;"><i class="fas fa-pills me-2" style="color: #d53f8c;"></i>Medicine</label>
+                                    <textarea name="medicine" class="form-control form-control-sm input-field" rows="3" style="resize: vertical;"></textarea>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-group">
+                                    <label style="color: #e53e3e;"><i class="fas fa-tint me-2" style="color: #4299e1;"></i>Water Intake (LTR)</label>
+                                    <input type="number" name="water_intake" class="form-control form-control-sm input-field">
+                                </div>
+                            </div>
+                            
+                            <!-- Temperature Section -->
+                            <div class="col-12">
+                                <div class="section-header">
+                                    <i class="fas fa-thermometer-half me-2" style="color: #ed8936;"></i>
+                                    <h6 style="color: #c05621;">Temperature Reading (°F) - 6 Times</h6>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="form-group">
+                                    <label style="color: #e53e3e;"><i class="fas fa-clock me-1" style="color: #ed8936;"></i>10:00 AM</label>
+                                    <input type="number" name="temperature_1" step="0.1" class="form-control form-control-sm input-field" placeholder="°F">
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="form-group">
+                                    <label style="color: #e53e3e;"><i class="fas fa-clock me-1" style="color: #ed8936;"></i>12:00 PM</label>
+                                    <input type="number" name="temperature_2" step="0.1" class="form-control form-control-sm input-field" placeholder="°F">
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="form-group">
+                                    <label style="color: #e53e3e;"><i class="fas fa-clock me-1" style="color: #ed8936;"></i>2:00 PM</label>
+                                    <input type="number" name="temperature_3" step="0.1" class="form-control form-control-sm input-field" placeholder="°F">
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="form-group">
+                                    <label style="color: #e53e3e;"><i class="fas fa-clock me-1" style="color: #ed8936;"></i>4:00 PM</label>
+                                    <input type="number" name="temperature_4" step="0.1" class="form-control form-control-sm input-field" placeholder="°F">
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="form-group">
+                                    <label style="color: #e53e3e;"><i class="fas fa-clock me-1" style="color: #ed8936;"></i>6:00 PM</label>
+                                    <input type="number" name="temperature_5" step="0.1" class="form-control form-control-sm input-field" placeholder="°F">
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="form-group">
+                                    <label style="color: #e53e3e;"><i class="fas fa-clock me-1" style="color: #ed8936;"></i>9:00 PM</label>
+                                    <input type="number" name="temperature_6" step="0.1" class="form-control form-control-sm input-field" placeholder="°F">
+                                </div>
+                            </div>
+                            
+                            <div class="col-12">
+                                <div class="form-group">
+                                    <label style="color: #e53e3e;"><i class="fas fa-sticky-note me-2" style="color: #d69e2e;"></i>Additional Notes</label>
+                                    <textarea name="notes" class="form-control form-control-sm input-field" rows="3"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer buttons -->
+                <div class="mt-4 d-flex justify-content-between flex-wrap">
+                    <div class="mb-2">
+                        <button type="button" class="btn btn-outline-primary btn-sm"
+                            onclick="switchTab('prev')">
+                            <i class="fas fa-arrow-left me-1"></i>Previous
+                        </button>
+                        <button type="button" class="btn btn-outline-primary btn-sm ms-2"
+                            onclick="switchTab('next')">
+                            Next<i class="fas fa-arrow-right ms-1"></i>
+                        </button>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane me-1"></i>Submit All Data
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+
+<script>
+    // Auto-dismiss messages after 5 seconds
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function(alert) {
+                const bsAlert = new bootstrap.Alert(alert);
+                setTimeout(function() {
+                    bsAlert.close();
+                }, 5000);
+            });
+        }, 100);
+
+        // Prevent form submission on Enter and move to next field instead
+        const form = document.querySelector('form');
+        const focusableElements = form.querySelectorAll('input[type="text"], input[type="number"], input[type="date"], textarea, select, button');
+        
+        focusableElements.forEach((element, index) => {
+            element.addEventListener('keydown', function(e) {
+                // For textareas, allow Shift+Enter for new lines, but Enter alone moves to next field
+                if (e.key === 'Enter') {
+                    if (element.tagName === 'TEXTAREA' && e.shiftKey) {
+                        // Allow Shift+Enter in textareas to create new line
+                        return;
+                    }
+                    e.preventDefault();
+                    
+                    // Move to next focusable element
+                    const nextIndex = index + 1;
+                    if (nextIndex < focusableElements.length) {
+                        focusableElements[nextIndex].focus();
+                    }
+                }
+            });
+        });
+
+        // Add event listener to medicine field to allow Shift+Enter for new lines
+        const medicineField = document.querySelector('textarea[name="medicine"]');
+        if (medicineField) {
+            medicineField.addEventListener('keydown', function(e) {
+                // Allow Enter with Shift to create new line, regular Enter moves to next field
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                }
+            });
+        }
+    });
+
+    // Egg calculation functions
+    function calculateMorningEggs(source) {
+        const EGGS_PER_TRAY = 30;
+        const trayInput = document.getElementById('tray_egg_morning');
+        const totalInput = document.getElementById('total_egg_morning');
+
+        if (source === 'from_tray') {
+            const trayCount = parseFloat(trayInput.value) || 0;
+            const totalEggs = trayCount * EGGS_PER_TRAY;
+            totalInput.value = totalEggs;
+        } else if (source === 'from_total') {
+            const totalEggs = parseFloat(totalInput.value) || 0;
+            const trayCount = totalEggs / EGGS_PER_TRAY;
+            trayInput.value = trayCount % 1 !== 0 ? trayCount.toFixed(2) : trayCount;
+        }
+    }
+
+    function calculateEveningEggs(source) {
+        const EGGS_PER_TRAY = 30;
+        const trayInput = document.getElementById('tray_egg_evening');
+        const totalInput = document.getElementById('total_egg_evening');
+
+        if (source === 'from_tray') {
+            const trayCount = parseFloat(trayInput.value) || 0;
+            const totalEggs = trayCount * EGGS_PER_TRAY;
+            totalInput.value = totalEggs;
+        } else if (source === 'from_total') {
+            const totalEggs = parseFloat(totalInput.value) || 0;
+            const trayCount = totalEggs / EGGS_PER_TRAY;
+            trayInput.value = trayCount % 1 !== 0 ? trayCount.toFixed(2) : trayCount;
+        }
+    }
+
+    function toggleInput(type) {
+        const hoursInput = document.getElementById(`${type}_hours`);
+        const birdsCountInput = document.getElementById(`${type}_birds_count`);
+        const isYes = document.getElementById(`${type}_yes`).checked;
+
+        if (hoursInput) {
+            if (isYes) {
+                hoursInput.style.display = 'block';
+                hoursInput.disabled = false;
+                hoursInput.required = true;
+            } else {
+                hoursInput.style.display = 'none';
+                hoursInput.value = '';
+                hoursInput.disabled = true;
+                hoursInput.required = false;
+            }
+        }
+
+        if (birdsCountInput) {
+            if (isYes) {
+                birdsCountInput.style.display = 'block';
+                birdsCountInput.disabled = false;
+                birdsCountInput.required = true;
+            } else {
+                birdsCountInput.style.display = 'none';
+                birdsCountInput.value = '';
+                birdsCountInput.disabled = true;
+                birdsCountInput.required = false;
+            }
+        }
+    }
+
+
+    // Calculate bundles from feed intake (1 bundle = 60 KG)
+    function calculateBundles() {
+        const BUNDLE_SIZE = 60; // 1 bundle = 60 KG
+        
+        // Male birds feed calculation
+        const feedMaleMorning = parseFloat(document.getElementById('feed_male_morning').value) || 0;
+        const feedMaleEvening = parseFloat(document.getElementById('feed_male_evening').value) || 0;
+        
+        const bundlesMaleMorning = feedMaleMorning / BUNDLE_SIZE;
+        const bundlesMaleEvening = feedMaleEvening / BUNDLE_SIZE;
+        const totalMaleBundles = bundlesMaleMorning + bundlesMaleEvening;
+        const totalMaleKG = feedMaleMorning + feedMaleEvening;
+        
+        // Display male birds results with 2 decimal places
+        document.getElementById('feed_male_morning_bundles').value = bundlesMaleMorning.toFixed(2);
+        document.getElementById('feed_male_evening_bundles').value = bundlesMaleEvening.toFixed(2);
+        document.getElementById('feed_male_total_bundles').value = totalMaleBundles.toFixed(2) + ' bundles';
+        document.getElementById('feed_male_total_kg').value = totalMaleKG.toFixed(2) + ' KG';
+        
+        // Save to hidden fields for database submission
+        document.getElementById('feed_male_morning_bundles_hidden').value = bundlesMaleMorning.toFixed(2);
+        document.getElementById('feed_male_evening_bundles_hidden').value = bundlesMaleEvening.toFixed(2);
+        
+        // Female birds feed calculation
+        const feedFemaleMorning = parseFloat(document.getElementById('feed_female_morning').value) || 0;
+        const feedFemaleEvening = parseFloat(document.getElementById('feed_female_evening').value) || 0;
+        
+        const bundlesFemaleMorning = feedFemaleMorning / BUNDLE_SIZE;
+        const bundlesFemaleEvening = feedFemaleEvening / BUNDLE_SIZE;
+        const totalFemaleBundles = bundlesFemaleMorning + bundlesFemaleEvening;
+        const totalFemaleKG = feedFemaleMorning + feedFemaleEvening;
+        
+        // Display female birds results with 2 decimal places
+        document.getElementById('feed_female_morning_bundles').value = bundlesFemaleMorning.toFixed(2);
+        document.getElementById('feed_female_evening_bundles').value = bundlesFemaleEvening.toFixed(2);
+        document.getElementById('feed_female_total_bundles').value = totalFemaleBundles.toFixed(2) + ' bundles';
+        document.getElementById('feed_female_total_kg').value = totalFemaleKG.toFixed(2) + ' KG';
+        
+        // Save to hidden fields for database submission
+        document.getElementById('feed_female_morning_bundles_hidden').value = bundlesFemaleMorning.toFixed(2);
+        document.getElementById('feed_female_evening_bundles_hidden').value = bundlesFemaleEvening.toFixed(2);
+    }
+
+    // Calculate KG from bundles when bundles are entered
+    function calculateFeedFromBundles(type) {
+        const BUNDLE_SIZE = 60; // 1 bundle = 60 KG
+        
+        if (type === 'male_morning') {
+            const bundles = parseFloat(document.getElementById('feed_male_morning_bundles').value) || 0;
+            const kg = bundles * BUNDLE_SIZE;
+            document.getElementById('feed_male_morning').value = kg > 0 ? kg.toFixed(2) : '';
+            calculateBundles(); // Recalculate totals
+        } else if (type === 'male_evening') {
+            const bundles = parseFloat(document.getElementById('feed_male_evening_bundles').value) || 0;
+            const kg = bundles * BUNDLE_SIZE;
+            document.getElementById('feed_male_evening').value = kg > 0 ? kg.toFixed(2) : '';
+            calculateBundles(); // Recalculate totals
+        } else if (type === 'female_morning') {
+            const bundles = parseFloat(document.getElementById('feed_female_morning_bundles').value) || 0;
+            const kg = bundles * BUNDLE_SIZE;
+            document.getElementById('feed_female_morning').value = kg > 0 ? kg.toFixed(2) : '';
+            calculateBundles(); // Recalculate totals
+        } else if (type === 'female_evening') {
+            const bundles = parseFloat(document.getElementById('feed_female_evening_bundles').value) || 0;
+            const kg = bundles * BUNDLE_SIZE;
+            document.getElementById('feed_female_evening').value = kg > 0 ? kg.toFixed(2) : '';
+            calculateBundles(); // Recalculate totals
+        }
+    }
+
+    // Tab navigation functions
+    function switchTab(direction) {
+        const tabs = document.querySelectorAll('.nav-link');
+        let activeIndex = 0;
+
+        tabs.forEach((tab, index) => {
+            if (tab.classList.contains('active')) {
+                activeIndex = index;
+            }
+        });
+
+        if (direction === 'next' && activeIndex < tabs.length - 1) {
+            tabs[activeIndex + 1].click();
+        } else if (direction === 'prev' && activeIndex > 0) {
+            tabs[activeIndex - 1].click();
+        }
+    }
+
+    // Initialize Bootstrap tabs
+    var triggerTabList = [].slice.call(document.querySelectorAll('#poultryTabs button'));
+    triggerTabList.forEach(function (triggerEl) {
+        new bootstrap.Tab(triggerEl);
+    });
+
+    // Function to fetch and populate record data
+    function fetchRecord() {
+        const date = document.getElementById('record-date').value;
+        if (!date) {
+            alert('Please select a date');
+            return;
+        }
+
+        // Ask for confirmation before editing
+        if (!confirm(`Are you sure you want to edit this date (${date})?`)) {
+            return;
+        }
+
+        document.getElementById('selected-date').value = date;
+
+        fetch(`/fetch-record-katheer/?date=${date}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Populate form fields with the fetched data
+                    Object.keys(data.data).forEach(key => {
+                        const element = document.querySelector(`[name="${key}"]`);
+                        if (element) {
+                            if (element.type === 'radio') {
+                                // Handle radio buttons (Yes/No)
+                                const value = data.data[key];
+                                const radio = document.querySelector(`[name="${key}"][value="${value}"]`);
+                                if (radio) {
+                                    radio.checked = true;
+                                    // Trigger the change event to handle hours visibility
+                                    radio.dispatchEvent(new Event('change'));
+                                }
+                            } else {
+                                // Handle other input types (text, number, textarea)
+                                element.value = data.data[key] || '';
+                            }
+                        }
+                    });
+
+                    // Explicitly handle hours for equipment
+                    const equipmentTypes = [
+                        { radio: 'artificial_insemination', hours: 'ai_hours', birdsCount: 'ai_birds_count' },
+                        { radio: 'fogger_used', hours: 'fogger_hours', birdsCount: null },
+                        { radio: 'fan_used', hours: 'fan_hours', birdsCount: null },
+                        { radio: 'light_used', hours: 'light_hours', birdsCount: null }
+                    ];
+
+                    equipmentTypes.forEach(type => {
+                        const radioYes = document.querySelector(`[name="${type.radio}"][value="Yes"]`);
+                        const hoursInput = document.getElementById(type.hours);
+                        const birdsCountInput = type.birdsCount ? document.getElementById(type.birdsCount) : null;
+                        
+                        if (radioYes && hoursInput && data.data[type.radio] === 'Yes') {
+                            radioYes.checked = true;
+                            hoursInput.style.display = 'block';
+                            hoursInput.disabled = false;
+                            hoursInput.required = true;
+                            hoursInput.value = data.data[type.hours] || '';
+                            
+                            // Handle birds count if it exists
+                            if (birdsCountInput) {
+                                birdsCountInput.style.display = 'block';
+                                birdsCountInput.disabled = false;
+                                birdsCountInput.required = true;
+                                birdsCountInput.value = data.data[type.birdsCount] || '';
+                            }
+                        }
+                    });
+
+                    const notesInput = document.querySelector('[name="notes"]');
+                    if (notesInput) {
+                        notesInput.value = data.data.notes || '';
+                    }
+
+                    // Calculate bundles after loading data
+                    calculateBundles();
+                    
+                    messages.success('Record loaded successfully!');
+                } else {
+                    messages.error(data.message || 'No record found for this date');
+                }
+            })
+            .catch(error => {
+                messages.error('Error fetching record: ' + error);
+            });
+    }
+
+    // Function to show messages
+    const messages = {
+        success: function(message) {
+            showMessage(message, 'success');
+        },
+        error: function(message) {
+            showMessage(message, 'danger');
+        }
+    };
+
+    function showMessage(message, type) {
+        const container = document.getElementById('message-container');
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type} alert-dismissible fade show`;
+        alert.role = 'alert';
+        alert.style = 'margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);';
+        
+        const icon = document.createElement('i');
+        icon.className = type === 'success' ? 'fas fa-check-circle me-2' : 'fas fa-exclamation-circle me-2';
+        alert.appendChild(icon);
+        
+        alert.appendChild(document.createTextNode(message));
+        
+        const closeButton = document.createElement('button');
+        closeButton.type = 'button';
+        closeButton.className = 'btn-close';
+        closeButton.setAttribute('data-bs-dismiss', 'alert');
+        closeButton.setAttribute('aria-label', 'Close');
+        alert.appendChild(closeButton);
+        
+        container.appendChild(alert);
+        
+        setTimeout(() => {
+            const bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+        }, 5000);
+    }
+
+    // Initialize page on page load
+    function initializePage() {
+        // Set today's date as default
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        const dateString = `${year}-${month}-${day}`;
+        
+        document.getElementById('record-date').value = dateString;
+        document.getElementById('selected-date').value = dateString;
+        
+        // Fetch today's record
+        fetchRecord();
+    }
+
+    // Run initialization when page is fully loaded
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializePage);
+    } else {
+        initializePage();
+    }
+</script>
+
+<style>
+    body {
+        background-color: #f7fafc;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    .mdc-card {
+        border: none;
+    }
+    
+    .nav-tabs {
+        border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .nav-tabs .nav-link {
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+        border: none;
+        border-bottom: 3px solid transparent;
+        transition: all 0.2s ease;
+        font-weight: 600;
+    }
+    
+    .nav-tabs .nav-link:hover {
+        border-color: #cbd5e0;
+        background-color: rgba(248, 250, 252, 0.7);
+    }
+    
+    .nav-tabs .nav-link.active {
+        background-color: transparent;
+        border-bottom: 3px solid;
+        font-weight: 700;
+    }
+    
+    #feed-tab.active {
+        color: #805ad5;
+        border-bottom-color: #805ad5;
+    }
+    
+    #eggs-tab.active {
+        color: #d69e2e;
+        border-bottom-color: #d69e2e;
+    }
+    
+    #equipment-tab.active {
+        color: #38a169;
+        border-bottom-color: #38a169;
+    }
+    
+    #other-tab.active {
+        color: #e53e3e;
+        border-bottom-color: #e53e3e;
+    }
+    
+    .form-group {
+        margin-bottom: 1rem;
+    }
+    
+    .form-group label {
+        margin-bottom: 0.4rem;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+    
+    .input-field {
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 0.6rem 0.75rem;
+        transition: all 0.2s ease;
+        background-color: #fff;
+    }
+    
+    .input-field:focus {
+        border-color: #4299e1;
+        box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.15);
+    }
+    
+    .section-header {
+        display: flex;
+        align-items: center;
+        padding-bottom: 0.5rem;
+        margin-bottom: 1rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .section-header h6 {
+        margin: 0;
+        font-weight: 700;
+    }
+    
+    .equipment-card {
+        background: rgba(248, 250, 252, 0.7);
+        padding: 1rem;
+        border-radius: 8px;
+        border-left: 4px solid #4299e1;
+    }
+    
+    .btn {
+        border-radius: 6px;
+        padding: 0.5rem 1rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-primary {
+        background-color: #2c5282;
+        border-color: #2c5282;
+    }
+    
+    .btn-primary:hover {
+        background-color: #2b6cb0;
+        border-color: #2b6cb0;
+        transform: translateY(-1px);
+    }
+    
+    .btn-outline-primary {
+        color: #2c5282;
+        border-color: #2c5282;
+    }
+    
+    .btn-outline-primary:hover {
+        background-color: #2c5282;
+        color: white;
+    }
+    
+    /* Message Styles */
+    .alert {
+        padding: 1rem;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        max-width: 400px;
+    }
+
+    .alert-success {
+        background-color: #def7ec;
+        color: #03543f;
+        border-left: 4px solid #0f766e;
+    }
+
+    .alert-danger {
+        background-color: #fde8e8;
+        color: #9b1c1c;
+        border-left: 4px solid #e02424;
+    }
+
+    .alert .btn-close {
+        padding: 1.05rem 1rem;
+        opacity: 0.5;
+    }
+
+    .alert .btn-close:hover {
+        opacity: 0.75;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .mdc-card {
+            padding: 1rem;
+        }
+        
+        .nav-tabs .nav-link {
+            padding: 0.5rem;
+            font-size: 0.8rem;
+        }
+        
+        .date-display {
+            font-size: 0.8rem;
+            padding: 6px 8px;
+        }
+        
+        .section-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .btn {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.9rem;
+        }
+    }
+</style>
+
+<!-- Font Awesome for icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+{% endblock %}

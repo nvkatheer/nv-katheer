@@ -1,0 +1,194 @@
+{% extends 'base.html' %}
+
+{% block title %}Backup & Restore - NV Poultry Farm{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-5">Database Backup & Restore</h1>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Export Backup Section -->
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">📥 Download Backup</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Download all database data as a JSON file for backup purposes.</p>
+                    <button type="button" class="btn btn-primary btn-lg" id="exportBtn">
+                        <i class="fas fa-download"></i> Download Backup
+                    </button>
+                    <div id="exportStatus" class="mt-3"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Import Backup Section -->
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">📤 Restore Backup</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Upload a previously downloaded backup JSON file to restore all data.</p>
+                    <div class="mb-3">
+                        <input type="file" class="form-control" id="importFile" accept=".json" />
+                        <small class="text-muted">Select a backup JSON file</small>
+                    </div>
+                    <button type="button" class="btn btn-success btn-lg" id="importBtn">
+                        <i class="fas fa-upload"></i> Restore Backup
+                    </button>
+                    <div id="importStatus" class="mt-3"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info Section -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <h5><i class="fas fa-info-circle"></i> Important Information</h5>
+                <ul class="mb-0">
+                    <li><strong>Download Backup:</strong> Creates a complete JSON backup of all data in the database.</li>
+                    <li><strong>Restore Backup:</strong> Will <strong>replace all existing data</strong> with data from the backup file. This action cannot be undone!</li>
+                    <li>Keep your backups in a safe location for disaster recovery purposes.</li>
+                    <li>Only admin users should perform backup and restore operations.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border: none;
+        border-radius: 8px;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+    }
+    .btn-primary, .btn-success {
+        border-radius: 6px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    .btn-primary:hover, .btn-success:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+</style>
+
+<script>
+    // CSRF Token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    const csrftoken = getCookie('csrftoken');
+
+    // Export Backup
+    document.getElementById('exportBtn').addEventListener('click', function() {
+        const statusDiv = document.getElementById('exportStatus');
+        statusDiv.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div> Preparing backup...';
+        
+        fetch('/export-backup/', {
+            method: 'GET',
+            headers: {
+                'X-CSRFToken': csrftoken
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to export backup');
+            }
+            return response.blob();
+        })
+        .then(blob => {
+            // Create download link
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `nv_poultry_backup_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+            statusDiv.innerHTML = '<div class="alert alert-success" role="alert"><i class="fas fa-check-circle"></i> Backup downloaded successfully!</div>';
+            setTimeout(() => statusDiv.innerHTML = '', 5000);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            statusDiv.innerHTML = '<div class="alert alert-danger" role="alert"><i class="fas fa-times-circle"></i> Error: ' + error.message + '</div>';
+        });
+    });
+
+    // Import Backup
+    document.getElementById('importBtn').addEventListener('click', function() {
+        const fileInput = document.getElementById('importFile');
+        const statusDiv = document.getElementById('importStatus');
+
+        if (!fileInput.files.length) {
+            statusDiv.innerHTML = '<div class="alert alert-warning" role="alert"><i class="fas fa-exclamation-triangle"></i> Please select a backup file.</div>';
+            return;
+        }
+
+        const file = fileInput.files[0];
+
+        // Confirm before restoring
+        if (!confirm('⚠️ WARNING: This will DELETE all existing data and replace it with data from the backup file. This action cannot be undone!\n\nAre you sure you want to proceed?')) {
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('backup_file', file);
+
+        statusDiv.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div> Restoring backup...';
+
+        fetch('/import-backup/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                statusDiv.innerHTML = '<div class="alert alert-success" role="alert"><i class="fas fa-check-circle"></i> ' + data.message + '</div>';
+                fileInput.value = '';
+                setTimeout(() => statusDiv.innerHTML = '', 5000);
+            } else {
+                statusDiv.innerHTML = '<div class="alert alert-danger" role="alert"><i class="fas fa-times-circle"></i> Error: ' + data.message + '</div>';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            statusDiv.innerHTML = '<div class="alert alert-danger" role="alert"><i class="fas fa-times-circle"></i> Error: ' + error.message + '</div>';
+        });
+    });
+
+    // Clear file input when changed
+    document.getElementById('importFile').addEventListener('change', function() {
+        document.getElementById('importStatus').innerHTML = '';
+    });
+</script>
+{% endblock %}

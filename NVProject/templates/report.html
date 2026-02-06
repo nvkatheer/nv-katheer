@@ -1,0 +1,1218 @@
+{% extends 'base.html' %}
+
+{% block title %}Report - NV Poultry Farm{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0" style="color: #2c5282; font-weight: 700;">
+            <i class="fas fa-chart-bar me-2"></i>Data Reports
+        </h2>
+        <div class="d-flex align-items-center gap-3">
+            <div class="date-range">
+                <div class="d-flex gap-2 align-items-center">
+                    <div>
+                        <label class="form-label small">From</label>
+                        <input type="date" id="start-date" class="form-control form-control-sm">
+                    </div>
+                    <div>
+                        <label class="form-label small">To</label>
+                        <input type="date" id="end-date" class="form-control form-control-sm">
+                    </div>
+                    <button onclick="fetchReportData()" class="btn btn-primary btn-sm mt-4">
+                        <i class="fas fa-sync-alt me-1"></i> Update
+                    </button>
+                    <button onclick="downloadExcel()" class="btn btn-success btn-sm ms-2 mt-4">
+                        <i class="fas fa-file-excel me-1"></i> Download Excel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- katheer Data Tab -->
+    <ul class="nav nav-tabs mb-4" id="reportTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="katheer-tab" data-bs-toggle="tab" data-bs-target="#katheer" type="button" role="tab">
+                <i class="fas fa-feather-alt me-1"></i>katheer
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="reportTabContent">
+        <!-- katheer Tab -->
+        <div class="tab-pane fade show active" id="katheer" role="tabpanel">
+            <div class="table-responsive">
+                <table class="table table-hover" id="katheer-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Total Feed (kg)</th>
+                            <th>Feed Average (g/bird)</th>
+                            <th>Total Eggs</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Data will be populated via JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detail Modal -->
+<div class="modal fade" id="detailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header print-header">
+                <div class="header-content">
+                    <h4 class="modal-title">NV Poultry Farm - Daily Report</h4>
+                    <div class="header-info">
+                        <span class="badge badge-primary"><span id="modal-breed-type"></span></span>
+                        <span class="report-date"><span id="modal-date"></span></span>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-primary btn-sm" onclick="printModalContent()">
+                    <i class="fas fa-print me-1"></i>Print
+                </button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Report Title for Print -->
+                <div class="print-title" style="display: none;">
+                    <h2>katheer - Daily Report</h2>
+                    <p>Date: <span id="print-date"></span></p>
+                </div>
+
+                <!-- Two Column Layout -->
+                <div class="report-grid">
+                    <!-- Left Column -->
+                    <div class="report-column">
+                        <!-- Daily Totals -->
+                        <div class="data-card">
+                            <div class="card-header">
+                                <h6 class="card-title">Egg Production</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="data-row">
+                                    <span class="label">Tray Eggs:</span>
+                                    <span class="value" id="modal-tray-egg-total">-</span>
+                                </div>
+                                <div class="data-row">
+                                    <span class="label">Total Eggs:</span>
+                                    <span class="value" id="modal-total-egg-total">-</span>
+                                </div>
+                                <div class="data-row">
+                                    <span class="label">Damaged:</span>
+                                    <span class="value" id="modal-damaged-egg-total">-</span>
+                                </div>
+                                <div class="data-row highlight">
+                                    <span class="label">Egg %:</span>
+                                    <span class="value" id="modal-egg-percentage">-</span>%
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Feed Information -->
+                        <div class="data-card">
+                            <div class="card-header">
+                                <h6 class="card-title">Feed & Water</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="data-row">
+                                    <span class="label">Total Feed:</span>
+                                    <span class="value" id="modal-feed-total">-</span><span class="unit">kg</span>
+                                </div>
+                                <div class="data-row">
+                                    <span class="label">Per Bird Avg:</span>
+                                    <span class="value" id="modal-feed-per-bird">-</span><span class="unit">g</span>
+                                </div>
+                                <div class="data-row">
+                                    <span class="label">Male Avg:</span>
+                                    <span class="value" id="modal-feed-male-avg">-</span><span class="unit">g</span>
+                                </div>
+                                <div class="data-row">
+                                    <span class="label">Feed Taken Male:</span>
+                                    <span class="value" id="modal-feed-male-kg">-</span><span class="unit">kg</span>
+                                </div>
+                                <div class="data-row">
+                                    <span class="label">Female Avg:</span>
+                                    <span class="value" id="modal-feed-female-avg">-</span><span class="unit">g</span>
+                                </div>
+                                <div class="data-row">
+                                    <span class="label">Feed Taken Female:</span>
+                                    <span class="value" id="modal-feed-female-kg">-</span><span class="unit">kg</span>
+                                </div>
+                                <div class="data-row highlight">
+                                    <span class="label">Water:</span>
+                                    <span class="value" id="modal-water-intake">-</span><span class="unit">ltr</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Stock Information -->
+                        <div class="data-card">
+                            <div class="card-header">
+                                <h6 class="card-title">Stock & Materials</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="data-row">
+                                    <span class="label">Closing Stock:</span>
+                                    <span class="value" id="modal-daily-closing-stock">-</span> kg
+                                </div>
+                                <div class="data-row">
+                                    <span class="label">Bundles:</span>
+                                    <span class="value" id="modal-daily-closing-bundles">-</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Current Birds -->
+                        <div class="data-card">
+                            <div class="card-header">
+                                <h6 class="card-title">Current Birds</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="data-row">
+                                    <span class="label">Male Birds:</span>
+                                    <span class="value" id="modal-current-male-birds">-</span><span class="unit">birds</span>
+                                </div>
+                                <div class="data-row">
+                                    <span class="label">Female Birds:</span>
+                                    <span class="value" id="modal-current-female-birds">-</span><span class="unit">birds</span>
+                                </div>
+                                <div class="data-row">
+                                    <span class="label">Total Birds:</span>
+                                    <span class="value" id="modal-current-total-birds">-</span><span class="unit">birds</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column -->
+                    <div class="report-column">
+                        <!-- Temperature -->
+                        <div class="data-card">
+                            <div class="card-header">
+                                <h6 class="card-title">Temperature Readings (°C)</h6>
+                            </div>
+                            <div class="card-body temp-grid">
+                                <div class="temp-item">
+                                    <span class="temp-time">10:00 AM</span>
+                                    <span class="temp-value" id="modal-temperature-1">-</span>
+                                </div>
+                                <div class="temp-item">
+                                    <span class="temp-time">12:00 PM</span>
+                                    <span class="temp-value" id="modal-temperature-2">-</span>
+                                </div>
+                                <div class="temp-item">
+                                    <span class="temp-time">2:00 PM</span>
+                                    <span class="temp-value" id="modal-temperature-3">-</span>
+                                </div>
+                                <div class="temp-item">
+                                    <span class="temp-time">4:00 PM</span>
+                                    <span class="temp-value" id="modal-temperature-4">-</span>
+                                </div>
+                                <div class="temp-item">
+                                    <span class="temp-time">6:00 PM</span>
+                                    <span class="temp-value" id="modal-temperature-5">-</span>
+                                </div>
+                                <div class="temp-item">
+                                    <span class="temp-time">9:00 PM</span>
+                                    <span class="temp-value" id="modal-temperature-6">-</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Mortality -->
+                        <div class="data-card">
+                            <div class="card-header">
+                                <h6 class="card-title">Mortality Count</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="data-row">
+                                    <span class="label">Male:</span>
+                                    <span class="value" id="modal-male-mortality">-</span> birds
+                                </div>
+                                <div class="data-row">
+                                    <span class="label">Female:</span>
+                                    <span class="value" id="modal-female-mortality">-</span> birds
+                                </div>
+                                <div class="data-row highlight">
+                                    <span class="label">Total:</span>
+                                    <span class="value" id="modal-total-mortality-count">-</span> birds
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Equipment -->
+                        <div class="data-card">
+                            <div class="card-header">
+                                <h6 class="card-title">Equipment Status</h6>
+                            </div>
+                            <div class="card-body equipment-grid">
+                                <div class="equipment-item">
+                                    <span class="equipment-label">AI</span>
+                                    <span class="equipment-status" id="modal-ai-status">-</span>
+                                    <span class="equipment-hours" id="modal-ai-hours">0h</span>
+                                    <span class="equipment-birds" id="modal-ai-birds-count">-</span>
+                                </div>
+                                <div class="equipment-item">
+                                    <span class="equipment-label">Fogger</span>
+                                    <span class="equipment-status" id="modal-fogger-status">-</span>
+                                    <span class="equipment-hours" id="modal-fogger-hours">0h</span>
+                                </div>
+                                <div class="equipment-item">
+                                    <span class="equipment-label">Fan</span>
+                                    <span class="equipment-status" id="modal-fan-status">-</span>
+                                    <span class="equipment-hours" id="modal-fan-hours">0h</span>
+                                </div>
+                                <div class="equipment-item">
+                                    <span class="equipment-label">Light</span>
+                                    <span class="equipment-status" id="modal-light-status">-</span>
+                                    <span class="equipment-hours" id="modal-light-hours">0h</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Medicine & Notes (Full Width) -->
+                <div class="report-footer">
+                    <div class="footer-section">
+                        <h6 class="footer-title">Medicine</h6>
+                        <div id="modal-medicine-list" class="footer-content">-</div>
+                    </div>
+                    <div class="footer-section">
+                        <h6 class="footer-title">Notes</h6>
+                        <p id="modal-notes" class="footer-content notes-text">-</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .table {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    
+    .table thead th {
+        background: #f8fafc;
+        border-bottom: 2px solid #e2e8f0;
+        color: #2d3748;
+        font-weight: 600;
+        padding: 12px;
+    }
+    
+    .table tbody td {
+        padding: 12px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .nav-tabs .nav-link {
+        color: #4a5568;
+        font-weight: 500;
+        padding: 0.75rem 1.25rem;
+        border: none;
+        border-bottom: 2px solid transparent;
+    }
+    
+    .nav-tabs .nav-link.active {
+        color: #2c5282;
+        border-bottom: 2px solid #2c5282;
+        font-weight: 600;
+    }
+    
+    .date-range .form-control {
+        border-radius: 6px;
+        border: 1px solid #e2e8f0;
+    }
+    
+    .btn-primary {
+        background-color: #2c5282;
+        border-color: #2c5282;
+    }
+    
+    .btn-primary:hover {
+        background-color: #2b6cb0;
+        border-color: #2b6cb0;
+    }
+
+    .view-btn {
+        padding: 4px 8px;
+        font-size: 0.85rem;
+    }
+
+    /* Modal Styles - Professional Design */
+    .modal-content {
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .modal {
+        display: none;
+        z-index: 1050;
+    }
+
+    .modal.show {
+        display: block !important;
+        z-index: 1050 !important;
+    }
+
+    .modal-backdrop {
+        z-index: 1040;
+        display: none;
+    }
+
+    .modal-backdrop.show {
+        display: block !important;
+    }
+
+    .modal-dialog {
+        z-index: 1051;
+    }
+
+    .modal-header.print-header {
+        background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%);
+        border: none;
+        padding: 1.25rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .header-content {
+        flex: 1;
+        color: white;
+    }
+
+    .header-content h4 {
+        margin: 0 0 0.5rem 0;
+        font-weight: 700;
+        font-size: 1.3rem;
+    }
+
+    .header-info {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .badge-primary {
+        background-color: #4299e1 !important;
+        color: white;
+        font-weight: 600;
+        padding: 0.35rem 0.75rem;
+    }
+
+    .report-date {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 0.95rem;
+        font-weight: 500;
+    }
+
+    .modal-header .btn-close {
+        filter: brightness(0) invert(1);
+    }
+
+    /* Report Grid Layout */
+    .report-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+
+    .report-column {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    /* Data Cards */
+    .data-card {
+        background: white;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        overflow: hidden;
+        transition: box-shadow 0.2s ease;
+    }
+
+    .data-card:hover {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .card-header {
+        background: linear-gradient(135deg, #edf2f7 0%, #f7fafc 100%);
+        padding: 10px 12px;
+        border-bottom: 2px solid #cbd5e0;
+    }
+
+    .card-title {
+        margin: 0;
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #1a365d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .card-body {
+        padding: 10px 12px;
+    }
+
+    /* Data Rows */
+    .data-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 6px 0;
+        border-bottom: 1px solid #edf2f7;
+        font-size: 0.9rem;
+        min-height: 1.5em;
+    }
+
+    .data-row .label {
+        flex: 1 1 auto;
+        padding-right: 10px;
+        color: #4a5568;
+        font-weight: 500;
+    }
+
+    .data-row .value {
+        flex: 0 0 auto;
+        text-align: right;
+        min-width: 70px;
+        color: #1a202c;
+        font-weight: 700;
+        margin-right: 4px;
+    }
+
+    .data-row:last-child {
+        border-bottom: none;
+    }
+
+    .data-row.highlight {
+        background: linear-gradient(90deg, #f0f9ff 0%, transparent 100%);
+        padding: 6px 8px;
+        border-radius: 4px;
+        font-weight: 600;
+        color: #0c63e4;
+    }
+
+    .label {
+        color: #4a5568;
+        font-weight: 500;
+    }
+
+    .value {
+        color: #1a202c;
+        font-weight: 700;
+    }
+
+    .unit {
+        color: #4a5568;
+        font-weight: 400;
+        font-size: 0.85rem;
+        flex-shrink: 0;
+        margin-left: 2px;
+    }
+    .temp-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+
+    .temp-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px;
+        background: #f7fafc;
+        border-radius: 4px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .temp-time {
+        font-size: 0.8rem;
+        color: #718096;
+        font-weight: 500;
+    }
+
+    .temp-value {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #2c5282;
+    }
+
+    /* Equipment Grid */
+    .equipment-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+
+    .equipment-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 8px;
+        background: #f7fafc;
+        border-radius: 4px;
+        border: 1px solid #e2e8f0;
+        text-align: center;
+    }
+
+    .equipment-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #4a5568;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+    }
+
+    .equipment-status {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #2c5282;
+    }
+
+    .equipment-hours {
+        font-size: 0.75rem;
+        color: #718096;
+    }
+
+    .equipment-birds {
+        font-size: 0.7rem;
+        color: #4a5568;
+        font-weight: 500;
+        margin-top: 2px;
+        padding: 2px 4px;
+        background: #edf2f7;
+        border-radius: 2px;
+    }
+
+    /* Footer Section */
+    .report-footer {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        padding-top: 12px;
+        border-top: 2px solid #e2e8f0;
+    }
+
+    .footer-section {
+        background: #f7fafc;
+        padding: 10px 12px;
+        border-radius: 6px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .footer-title {
+        margin: 0 0 8px 0;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #1a365d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .footer-content {
+        font-size: 0.85rem;
+        color: #2d3748;
+        margin: 0;
+        line-height: 1.4;
+    }
+
+    .notes-text {
+        margin: 0;
+        padding: 6px;
+        background: white;
+        border: 1px solid #cbd5e0;
+        border-radius: 4px;
+        min-height: 40px;
+        max-height: 60px;
+        overflow-y: auto;
+    }
+
+    /* Mobile Responsive Styles */
+    @media (max-width: 768px) {
+        .container {
+            padding-left: 10px;
+            padding-right: 10px;
+        }
+
+        .table th, .table td {
+            padding: 8px;
+        }
+
+        .date-range {
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .date-range .d-flex {
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .date-range div {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .date-range button {
+            width: 100%;
+            margin-top: 10px !important;
+        }
+
+        .modal-dialog {
+            margin: 10px;
+        }
+
+        .report-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .report-footer {
+            grid-template-columns: 1fr;
+        }
+
+        .temp-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .equipment-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    /* Print Styles - A4 Optimized */
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+        
+        .modal-content {
+            visibility: visible;
+            position: fixed;
+            left: 0;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            margin: 0;
+            padding: 0;
+            border: none;
+            border-radius: 0;
+            box-shadow: none;
+            width: 210mm;
+            height: 297mm;
+            overflow: visible;
+        }
+
+        .modal-content * {
+            visibility: visible;
+        }
+
+        .print-title {
+            display: block !important;
+            text-align: center;
+            padding: 8mm 10mm 4mm 10mm;
+            border-bottom: 2px solid #000;
+            margin-bottom: 6mm;
+        }
+
+        .print-title h2 {
+            margin: 0 0 3mm 0;
+            font-size: 14pt;
+            font-weight: 700;
+        }
+
+        .print-title p {
+            margin: 0;
+            font-size: 10pt;
+            color: #333;
+        }
+
+        .modal-header {
+            display: none;
+        }
+
+        .modal-body {
+            padding: 10mm;
+            font-size: 8.5pt;
+            line-height: 1.3;
+        }
+
+        .btn-close, .btn {
+            display: none !important;
+        }
+
+        .report-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6mm;
+            margin-bottom: 6mm;
+        }
+
+        .report-column {
+            display: flex;
+            flex-direction: column;
+            gap: 6mm;
+        }
+
+        .data-card {
+            border: 1px solid #000;
+            page-break-inside: avoid;
+        }
+
+        .card-header {
+            background: #ddd;
+            padding: 2mm 3mm;
+            border-bottom: 1px solid #000;
+        }
+
+        .card-title {
+            font-size: 8pt;
+            margin: 0;
+            font-weight: 700;
+        }
+
+        .card-body {
+            padding: 2mm 3mm;
+        }
+
+        .data-row {
+            padding: 1mm 0;
+            border-bottom: 0.5px solid #ccc;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 7.5pt;
+            min-height: 3.5mm;
+        }
+
+        .data-row:last-child {
+            border-bottom: none;
+        }
+
+        .data-row.highlight {
+            background: #f5f5f5;
+            padding: 1mm 2mm;
+        }
+
+        .label {
+            flex: 1 1 auto;
+            padding-right: 3mm;
+        }
+
+        .value {
+            text-align: right;
+            font-weight: 700;
+            min-width: 22mm;
+            flex: 0 0 auto;
+            margin-right: 1mm;
+        }
+
+        .unit {
+            margin-left: 1mm;
+            font-weight: 400;
+            font-size: 6.5pt;
+            flex-shrink: 0;
+        }
+
+        .temp-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3mm;
+        }
+
+        .temp-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 2mm;
+            border: 0.5px solid #ccc;
+            background: #f9f9f9;
+            font-size: 7.5pt;
+        }
+
+        .temp-time {
+            flex: 1;
+            font-size: 6.5pt;
+        }
+
+        .temp-value {
+            font-weight: 700;
+            min-width: 30px;
+            text-align: right;
+        }
+
+        .equipment-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3mm;
+        }
+
+        .equipment-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2mm;
+            border: 0.5px solid #ccc;
+            background: #f9f9f9;
+            font-size: 6.5pt;
+            text-align: center;
+        }
+
+        .equipment-label {
+            font-size: 6pt;
+            margin-bottom: 1mm;
+        }
+
+        .equipment-status {
+            font-size: 7.5pt;
+            font-weight: 700;
+        }
+
+        .equipment-hours {
+            font-size: 6pt;
+        }
+
+        .equipment-birds {
+            font-size: 5.5pt;
+            margin-top: 1mm;
+            padding: 0.5mm 1mm;
+        }
+
+        .report-footer {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6mm;
+            margin-top: 6mm;
+            page-break-inside: avoid;
+        }
+
+        .footer-section {
+            padding: 2mm 3mm;
+            border: 1px solid #000;
+            page-break-inside: avoid;
+        }
+
+        .footer-title {
+            font-size: 7.5pt;
+            margin: 0 0 2mm 0;
+            font-weight: 700;
+        }
+
+        .footer-content {
+            font-size: 7.5pt;
+            margin: 0;
+            line-height: 1.3;
+        }
+
+        .notes-text {
+            border: 0.5px solid #ccc;
+            padding: 1.5mm;
+            margin: 0;
+            font-size: 7pt;
+            max-height: 30mm;
+            overflow: hidden;
+        }
+
+        @page {
+            size: A4;
+            margin: 0;
+            padding: 0;
+        }
+    }
+</style>
+
+<script>
+    // Function to handle printing
+    function printModalContent() {
+        // Set print date
+        const modalDate = document.getElementById('modal-date').textContent;
+        document.getElementById('print-date').textContent = modalDate;
+        
+        // Print the document
+        window.print();
+    }
+
+    // Reset date range when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        resetDateRange();
+        fetchReportData();
+    });
+
+    function resetDateRange() {
+        const today = new Date();
+        const sevenDaysAgo = new Date(today);
+        sevenDaysAgo.setDate(today.getDate() - 7);
+        
+        document.getElementById('start-date').value = sevenDaysAgo.toISOString().split('T')[0];
+        document.getElementById('end-date').value = today.toISOString().split('T')[0];
+    }
+
+    // Add event listener for page refresh
+    window.addEventListener('beforeunload', function() {
+        sessionStorage.removeItem('reportDateRange');
+    });
+
+    function fetchReportData() {
+        const startDate = document.getElementById('start-date').value;
+        const endDate = document.getElementById('end-date').value;
+
+        // Fetch data for katheer
+        fetch(`/report-data/?start_date=${startDate}&end_date=${endDate}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                populateTable('katheer-table', data.records, 'katheer');
+            }
+        })
+        .catch(error => console.error('Error fetching data:', error));
+    }
+
+    function populateTable(tableId, records) {
+        const tbody = document.querySelector(`#${tableId} tbody`);
+        tbody.innerHTML = '';
+
+        records.forEach(record => {
+            // Use new feed_total if available, otherwise calculate from legacy fields
+            let totalFeed = parseFloat(record.feed_total || 0);
+            if (totalFeed === 0) {
+                totalFeed = (parseFloat(record.feed_morning || 0) + parseFloat(record.feed_evening || 0)).toFixed(2);
+            }
+            const feedAverage = record.feed_per_gram_per_bird || '0';
+            const totalEggs = parseInt(record.total_egg_morning || 0) + parseInt(record.total_egg_evening || 0);
+            
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${formatDate(record.date)}</td>
+                <td>${totalFeed}</td>
+                <td>${feedAverage}</td>
+                <td>${totalEggs}</td>
+                <td>
+                    <button class="btn btn-primary btn-sm view-btn" onclick="viewDetails('${record.date}')">
+                        <i class="fas fa-eye me-1"></i>View
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    function viewDetails(date) {
+        console.log('=== Opening modal for date:', date, '===');
+        
+        // Fetch detailed record for katheer
+        fetch(`/fetch-record-katheer/?date=${date}`)
+            .then(response => {
+                console.log('Response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(result => {
+                console.log('API Response received:', result);
+                
+                if (!result.success) {
+                    console.error('API returned success: false');
+                    alert('Error: ' + (result.message || 'Failed to load record details'));
+                    return;
+                }
+                
+                const data = result.data;
+                console.log('Data to populate:', data);
+                
+                try {
+                    // Update modal title
+                    document.getElementById('modal-breed-type').textContent = 'katheer';
+                    document.getElementById('modal-date').textContent = formatDate(date);
+
+                    // Feed Information - Show total feed and averages
+                    const feedMaleMorning = parseFloat(data.feed_male_morning || 0);
+                    const feedMaleEvening = parseFloat(data.feed_male_evening || 0);
+                    const feedFemaleMorning = parseFloat(data.feed_female_morning || 0);
+                    const feedFemaleEvening = parseFloat(data.feed_female_evening || 0);
+                    const feedMorning = parseFloat(data.feed_morning || 0);
+                    const feedEvening = parseFloat(data.feed_evening || 0);
+                    
+                    // Use new fields if available, otherwise use legacy
+                    const morningTotal = (feedMaleMorning + feedFemaleMorning) || feedMorning;
+                    const eveningTotal = (feedMaleEvening + feedFemaleEvening) || feedEvening;
+                    const totalFeed = (morningTotal + eveningTotal).toFixed(2);
+                    
+                    // Get male and female feed kg and per bird averages
+                    const maleFeedKg = parseFloat(data.male_feed_kg || 0).toFixed(2);
+                    const femaleFeedKg = parseFloat(data.female_feed_kg || 0).toFixed(2);
+                    const maleFeedAvg = data.male_feed_per_bird || '0';
+                    const femaleFeedAvg = data.female_feed_per_bird || '0';
+                    
+                    document.getElementById('modal-feed-total').textContent = totalFeed;
+                    document.getElementById('modal-feed-per-bird').textContent = data.feed_per_gram_per_bird || '0';
+                    document.getElementById('modal-feed-male-avg').textContent = maleFeedAvg;
+                    document.getElementById('modal-feed-male-kg').textContent = maleFeedKg;
+                    document.getElementById('modal-feed-female-avg').textContent = femaleFeedAvg;
+                    document.getElementById('modal-feed-female-kg').textContent = femaleFeedKg;
+                    document.getElementById('modal-water-intake').textContent = data.water_intake || '0';
+
+                    // Daily Totals - Egg Information
+                    const trayMorning = parseFloat(data.tray_egg_morning || 0);
+                    const totalMorning = parseInt(data.total_egg_morning || 0);
+                    const damagedMorning = parseInt(data.damaged_egg_morning || 0);
+                    
+                    const trayEvening = parseFloat(data.tray_egg_evening || 0);
+                    const totalEvening = parseInt(data.total_egg_evening || 0);
+                    const damagedEvening = parseInt(data.damaged_egg_evening || 0);
+
+                    // Update Daily Totals - Tray eggs with decimal
+                    document.getElementById('modal-tray-egg-total').textContent = (trayMorning + trayEvening).toFixed(2);
+                    document.getElementById('modal-total-egg-total').textContent = totalMorning + totalEvening;
+                    document.getElementById('modal-damaged-egg-total').textContent = damagedMorning + damagedEvening;
+                    document.getElementById('modal-egg-percentage').textContent = data.egg_percentage || '0';
+
+                    // Feed Per Bird and Daily Closing Stock
+                    document.getElementById('modal-feed-per-bird').textContent = data.feed_per_gram_per_bird || '0';
+                    document.getElementById('modal-daily-closing-stock').textContent = data.daily_closing_stock || '0';
+                    document.getElementById('modal-daily-closing-bundles').textContent = data.daily_closing_bundles || '0';
+
+                    // Current Birds
+                    document.getElementById('modal-current-male-birds').textContent = data.male_current_birds || '0';
+                    document.getElementById('modal-current-female-birds').textContent = data.female_current_birds || '0';
+                    document.getElementById('modal-current-total-birds').textContent = data.total_current_birds || '0';
+
+                    // Temperature Readings
+                    document.getElementById('modal-temperature-1').textContent = data.temperature_1 || '0';
+                    document.getElementById('modal-temperature-2').textContent = data.temperature_2 || '0';
+                    document.getElementById('modal-temperature-3').textContent = data.temperature_3 || '0';
+                    document.getElementById('modal-temperature-4').textContent = data.temperature_4 || '0';
+                    document.getElementById('modal-temperature-5').textContent = data.temperature_5 || '0';
+                    document.getElementById('modal-temperature-6').textContent = data.temperature_6 || '0';
+
+                    // Mortality Count
+                    document.getElementById('modal-male-mortality').textContent = data.male_mortality || '0';
+                    document.getElementById('modal-female-mortality').textContent = data.female_mortality || '0';
+                    document.getElementById('modal-total-mortality-count').textContent = data.total_mortality || '0';
+
+                    // Equipment Status
+                    document.getElementById('modal-ai-status').textContent = data.artificial_insemination || 'No';
+                    document.getElementById('modal-ai-hours').textContent = (data.ai_hours || '0') + 'h';
+                    document.getElementById('modal-ai-birds-count').textContent = (data.ai_birds_count || '-') + ' birds';
+                    document.getElementById('modal-fogger-status').textContent = data.fogger_used || 'No';
+                    document.getElementById('modal-fogger-hours').textContent = (data.fogger_hours || '0') + 'h';
+                    document.getElementById('modal-fan-status').textContent = data.fan_used || 'No';
+                    document.getElementById('modal-fan-hours').textContent = (data.fan_hours || '0') + 'h';
+                    document.getElementById('modal-light-status').textContent = data.light_used || 'No';
+                    document.getElementById('modal-light-hours').textContent = (data.light_hours || '0') + 'h';
+
+                    // Other Information - Display medicine as list
+                    const medicineList = document.getElementById('modal-medicine-list');
+                    medicineList.innerHTML = '';
+                    const medicines = (data.medicine || 'None').split(',');
+                    medicines.forEach(med => {
+                        const trimmedMed = med.trim();
+                        if (trimmedMed) {
+                            medicineList.innerHTML += '<p style="margin: 2px 0; font-size: 0.85rem;">' + trimmedMed + '</p>';
+                        }
+                    });
+                    if (medicineList.innerHTML === '') {
+                        medicineList.innerHTML = '<p style="margin: 0; font-size: 0.85rem;">None</p>';
+                    }
+                    
+                    document.getElementById('modal-notes').textContent = data.notes || 'No notes';
+
+                    // Show the modal with timeout to ensure DOM is ready
+                    setTimeout(() => {
+                        console.log('Preparing to show modal...');
+                        const modalElement = document.getElementById('detailModal');
+                        
+                        if (!modalElement) {
+                            console.error('CRITICAL: Modal element #detailModal not found in DOM!');
+                            alert('Error: Modal not found in page. Please refresh and try again.');
+                            return;
+                        }
+                        
+                        console.log('Modal element found:', modalElement);
+                        console.log('Modal current display:', window.getComputedStyle(modalElement).display);
+                        
+                        try {
+                            // Destroy any existing modal instance
+                            const existingInstance = bootstrap.Modal.getInstance(modalElement);
+                            if (existingInstance) {
+                                console.log('Destroying existing modal instance...');
+                                existingInstance.dispose();
+                            }
+                            
+                            // Create and show new modal
+                            console.log('Creating new Bootstrap Modal instance...');
+                            const detailModal = new bootstrap.Modal(modalElement, {
+                                backdrop: true,
+                                keyboard: true,
+                                focus: true
+                            });
+                            
+                            console.log('Showing modal...');
+                            detailModal.show();
+                            console.log('Modal should be visible now');
+                        } catch (e) {
+                            console.error('ERROR creating/showing modal:', e);
+                            console.error('Error message:', e.message);
+                            console.error('Error stack:', e.stack);
+                            alert('Error showing modal: ' + e.message);
+                        }
+                    }, 100);
+                    
+                } catch (e) {
+                    console.error('Error updating modal content:', e);
+                    console.error('Error at line with null element:', e.message);
+                    alert('Error: ' + e.message);
+                }
+            })
+            .catch(error => {
+                console.error('ERROR in fetch:', error);
+                alert('Error loading record details: ' + error.message);
+            });
+    }
+
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+    }
+
+    function downloadExcel() {
+        const startDate = document.getElementById('start-date').value;
+        const endDate = document.getElementById('end-date').value;
+        
+        if (!startDate || !endDate) {
+            alert('Please select a date range first');
+            return;
+        }
+
+        // Create the download URL with parameters
+        const url = `/download-excel/?start_date=${startDate}&end_date=${endDate}`;
+        
+        // Create a temporary link and click it to start the download
+        const link = document.createElement('a');
+        link.href = url;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+</script>
+{% endblock %}

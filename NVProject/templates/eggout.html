@@ -1,0 +1,999 @@
+{% extends 'base.html' %}
+
+{% block title %}Egg Out - NV Poultry Farm{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --primary-color: #0d6efd;
+        --success-color: #198754;
+        --warning-color: #ffc107;
+        --danger-color: #dc3545;
+        --info-color: #0dcaf0;
+        --light-bg: #f8f9fa;
+        --border-radius: 12px;
+        --box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    body {
+        background-color: var(--light-bg);
+    }
+
+    .eggout-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 15px;
+    }
+
+    .page-header {
+        margin-bottom: 30px;
+        text-align: center;
+    }
+
+    .page-header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 5px;
+    }
+
+    .page-header p {
+        color: #7f8c8d;
+        font-size: 1rem;
+    }
+
+    /* Navigation Tabs */
+    .nav-tabs {
+        border-bottom: 2px solid #e0e0e0;
+        gap: 10px;
+        margin-bottom: 30px;
+    }
+
+    .nav-link {
+        border: none !important;
+        color: #7f8c8d;
+        font-weight: 600;
+        padding: 12px 20px;
+        border-radius: var(--border-radius) var(--border-radius) 0 0;
+        transition: all 0.3s ease;
+        background-color: transparent;
+    }
+
+    .nav-link:hover {
+        color: var(--primary-color);
+        background-color: rgba(13, 110, 253, 0.05);
+    }
+
+    .nav-link.active {
+        color: white;
+        background: linear-gradient(135deg, var(--primary-color) 0%, #0a58ca 100%);
+        box-shadow: var(--box-shadow);
+    }
+
+    /* Dashboard Cards */
+    .stats-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: var(--border-radius);
+        padding: 25px;
+        box-shadow: var(--box-shadow);
+        transition: all 0.3s ease;
+        border: 1px solid #e9ecef;
+        border-top: 4px solid var(--primary-color);
+    }
+
+    .stat-card.eggs {
+        border-top-color: var(--primary-color);
+    }
+
+    .stat-card.eggout {
+        border-top-color: var(--success-color);
+    }
+
+    .stat-card.balance {
+        border-top-color: var(--warning-color);
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    }
+
+    .stat-card-label {
+        font-size: 0.95rem;
+        color: #7f8c8d;
+        font-weight: 600;
+        margin-bottom: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .stat-card-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+
+    .stat-card-value.primary {
+        color: var(--primary-color);
+    }
+
+    .stat-card-value.success {
+        color: var(--success-color);
+    }
+
+    .stat-card-value.warning {
+        color: var(--warning-color);
+    }
+
+    .stat-card-desc {
+        font-size: 0.85rem;
+        color: #95a5a6;
+    }
+
+    /* Form Section */
+    .form-card {
+        background: white;
+        border-radius: var(--border-radius);
+        padding: 25px;
+        box-shadow: var(--box-shadow);
+        border: 1px solid #e9ecef;
+        margin-bottom: 25px;
+    }
+
+    .form-card h5 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+    }
+
+    .form-card h5::before {
+        content: '';
+        display: inline-block;
+        width: 4px;
+        height: 25px;
+        background: var(--primary-color);
+        border-radius: 2px;
+        margin-right: 12px;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #2c3e50;
+        font-size: 0.95rem;
+        margin-bottom: 8px;
+    }
+
+    .form-control, .form-select {
+        border: 1.5px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 10px 12px;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
+    }
+
+    .input-group-text {
+        background-color: var(--light-bg);
+        border: 1.5px solid #e0e0e0;
+    }
+
+    .form-buttons {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        padding: 10px 24px;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, var(--primary-color) 0%, #0a58ca 100%);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+    }
+
+    .btn-secondary {
+        background-color: #e9ecef;
+        color: #2c3e50;
+    }
+
+    .btn-secondary:hover {
+        background-color: #dee2e6;
+    }
+
+    .btn-success {
+        background: linear-gradient(135deg, var(--success-color) 0%, #157347 100%);
+        color: white;
+    }
+
+    .btn-success:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(25, 135, 84, 0.3);
+    }
+
+    .btn-sm {
+        padding: 6px 12px;
+        font-size: 0.85rem;
+    }
+
+    .btn-info {
+        background-color: var(--info-color);
+        color: white;
+    }
+
+    .btn-info:hover {
+        background-color: #0bb5d9;
+    }
+
+    .btn-danger {
+        background-color: var(--danger-color);
+        color: white;
+    }
+
+    .btn-danger:hover {
+        background-color: #bd2130;
+    }
+
+    .form-message {
+        margin-left: 10px;
+        animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateX(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    /* Table Styles */
+    .table-card {
+        background: white;
+        border-radius: var(--border-radius);
+        padding: 25px;
+        box-shadow: var(--box-shadow);
+        border: 1px solid #e9ecef;
+        overflow: hidden;
+    }
+
+    .table-card h5 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+    }
+
+    .table-card h5::before {
+        content: '';
+        display: inline-block;
+        width: 4px;
+        height: 25px;
+        background: var(--success-color);
+        border-radius: 2px;
+        margin-right: 12px;
+    }
+
+    .table {
+        margin-bottom: 0;
+    }
+
+    .table thead {
+        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+        color: white;
+    }
+
+    .table thead th {
+        border: none;
+        font-weight: 700;
+        padding: 15px;
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .table tbody td {
+        padding: 12px 15px;
+        vertical-align: middle;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .table tbody tr:hover {
+        background-color: rgba(13, 110, 253, 0.05);
+    }
+
+    .table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .table-responsive {
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: #95a5a6;
+    }
+
+    .empty-state svg {
+        width: 80px;
+        height: 80px;
+        margin-bottom: 15px;
+        opacity: 0.5;
+    }
+
+    /* Modal Styles */
+    .modal-content {
+        border: 1px solid #e9ecef;
+        border-radius: var(--border-radius);
+        box-shadow: var(--box-shadow);
+    }
+
+    .modal-header {
+        background: linear-gradient(135deg, var(--primary-color) 0%, #0a58ca 100%);
+        color: white;
+        border: none;
+        padding: 20px;
+    }
+
+    .modal-header .btn-close {
+        filter: brightness(0) invert(1);
+    }
+
+    .modal-body {
+        padding: 25px;
+    }
+
+    .modal-footer {
+        background-color: var(--light-bg);
+        border: 1px solid #e9ecef;
+        padding: 15px;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .eggout-container {
+            padding: 10px;
+        }
+
+        .page-header h1 {
+            font-size: 1.75rem;
+        }
+
+        .stats-container {
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+
+        .stat-card {
+            padding: 20px;
+        }
+
+        .stat-card-value {
+            font-size: 2rem;
+        }
+
+        .form-card, .table-card {
+            padding: 15px;
+        }
+
+        .form-buttons {
+            flex-direction: column;
+        }
+
+        .form-buttons .btn {
+            width: 100%;
+        }
+
+        .nav-link {
+            padding: 10px 15px;
+            font-size: 0.9rem;
+        }
+
+        .table thead th {
+            padding: 10px;
+            font-size: 0.85rem;
+        }
+
+        .table tbody td {
+            padding: 8px;
+            font-size: 0.9rem;
+        }
+
+        .btn-sm {
+            padding: 4px 8px;
+            font-size: 0.75rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .page-header h1 {
+            font-size: 1.5rem;
+        }
+
+        .stat-card-value {
+            font-size: 1.75rem;
+        }
+
+        .form-card h5, .table-card h5 {
+            font-size: 1.1rem;
+        }
+
+        .table {
+            font-size: 0.85rem;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            font-size: 0.85rem;
+        }
+    }
+
+    /* Badge Styles */
+    .badge {
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.85rem;
+    }
+
+    /* Loading Animation */
+    .spinner-small {
+        width: 1rem;
+        height: 1rem;
+        border-width: 2px;
+    }
+</style>
+
+<div class="eggout-container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1>🥚 Egg Out Management</h1>
+        <p>Track and manage your egg distribution efficiently</p>
+    </div>
+
+    <!-- Tab Navigation -->
+    <ul class="nav nav-tabs mb-4" id="eggoutTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="dashboard-tab" data-bs-toggle="tab" data-bs-target="#dashboard" type="button" role="tab">
+                <i class="fas fa-chart-pie me-2"></i> Dashboard
+            </button>
+        </li>
+        {% for group in user_groups %}
+        {% if group.name == 'admin'%}
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="entries-tab" data-bs-toggle="tab" data-bs-target="#entries" type="button" role="tab">
+                <i class="fas fa-plus-circle me-2"></i> Entries
+            </button>
+        </li>
+        {% endif %}
+        {% endfor %}
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="report-tab" data-bs-toggle="tab" data-bs-target="#report" type="button" role="tab">
+                <i class="fas fa-file-alt me-2"></i> Report
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="eggoutTabContent">
+        
+        <!-- Dashboard Tab -->
+        <div class="tab-pane fade show active" id="dashboard" role="tabpanel">
+            <!-- Filter Card -->
+            <div class="form-card">
+                <h5>Filter by Date Range</h5>
+                <div class="row">
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <label for="dashboardStartDate" class="form-label">Start Date</label>
+                        <input type="date" class="form-control" id="dashboardStartDate">
+                    </div>
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <label for="dashboardEndDate" class="form-label">End Date</label>
+                        <input type="date" class="form-control" id="dashboardEndDate">
+                    </div>
+                    <div class="col-lg-3 col-md-6 mb-3 d-flex align-items-end">
+                        <button class="btn btn-primary w-100" id="filterBtn">
+                            <i class="fas fa-filter me-2"></i> Apply Filter
+                        </button>
+                    </div>
+                    <div class="col-lg-3 col-md-6 mb-3 d-flex align-items-end">
+                        <button class="btn btn-secondary w-100" id="resetFilterBtn">
+                            <i class="fas fa-redo me-2"></i> Reset
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stats-container">
+                <div class="stat-card eggs">
+                    <div class="stat-card-label">Total Eggs</div>
+                    <div class="stat-card-value primary" id="totalEggs">0</div>
+                    <div class="stat-card-desc">From katheer Records</div>
+                </div>
+
+                <div class="stat-card eggout">
+                    <div class="stat-card-label">Egg Out</div>
+                    <div class="stat-card-value success" id="totalEggOut">0</div>
+                    <div class="stat-card-desc">Total Distributed</div>
+                </div>
+
+                <div class="stat-card balance">
+                    <div class="stat-card-label">Balance Eggs</div>
+                    <div class="stat-card-value warning" id="balanceEggs">0</div>
+                    <div class="stat-card-desc">Remaining Stock</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Entries Tab -->
+        <div class="tab-pane fade" id="entries" role="tabpanel">
+            <!-- Form Card -->
+            <div class="form-card">
+                <h5>Add/Edit Egg Out Entry</h5>
+                <form id="eggoutForm">
+                    <div class="row">
+                        <div class="col-lg-4 col-md-6 mb-3">
+                            <label for="entryDate" class="form-label">Date <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="entryDate" name="date" required>
+                        </div>
+                        <div class="col-lg-4 col-md-6 mb-3">
+                            <label for="eggOutCount" class="form-label">Egg Out Count <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="eggOutCount" name="egg_out_count" min="0" required placeholder="0">
+                        </div>
+                        <div class="col-lg-4 col-md-12 mb-3">
+                            <label for="entryNotes" class="form-label">Notes</label>
+                            <input type="text" class="form-control" id="entryNotes" name="notes" placeholder="Optional notes">
+                        </div>
+                    </div>
+                    <div class="form-buttons">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i> Add Entry
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="clearBtn">
+                            <i class="fas fa-redo me-2"></i> Clear
+                        </button>
+                        <span id="formMessage" class="form-message"></span>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Entries Table -->
+            <div class="table-card">
+                <h5>Recent Entries</h5>
+                <div class="table-responsive">
+                    <table class="table" id="entriesTable">
+                        <thead>
+                            <tr>
+                                <th><i class="fas fa-calendar me-2"></i> Date</th>
+                                <th><i class="fas fa-egg me-2"></i> Egg Out Count</th>
+                                <th><i class="fas fa-sticky-note me-2"></i> Notes</th>
+                                <th><i class="fas fa-cogs me-2"></i> Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="entriesTableBody">
+                            <tr>
+                                <td colspan="4" class="empty-state">
+                                    <i class="fas fa-folder-open" style="font-size: 3rem; opacity: 0.3;"></i>
+                                    <p style="margin-top: 10px;">No entries found</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Report Tab -->
+        <div class="tab-pane fade" id="report" role="tabpanel">
+            <!-- Filter Card -->
+            <div class="form-card">
+                <h5>Generate Report</h5>
+                <div class="row">
+                    <div class="col-lg-4 col-md-6 mb-3">
+                        <label for="reportStartDate" class="form-label">Start Date</label>
+                        <input type="date" class="form-control" id="reportStartDate">
+                    </div>
+                    <div class="col-lg-4 col-md-6 mb-3">
+                        <label for="reportEndDate" class="form-label">End Date</label>
+                        <input type="date" class="form-control" id="reportEndDate">
+                    </div>
+                    <div class="col-lg-4 col-md-12 mb-3 d-flex align-items-end">
+                        <button class="btn btn-success w-100" id="downloadExcelBtn">
+                            <i class="fas fa-download me-2"></i> Download Excel
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Report Table -->
+            <div class="table-card">
+                <h5>Egg Out Report</h5>
+                <div class="table-responsive">
+                    <table class="table" id="reportTable">
+                        <thead>
+                            <tr>
+                                <th><i class="fas fa-calendar me-2"></i> Date</th>
+                                <th><i class="fas fa-egg me-2"></i> Egg Out Count</th>
+                                <th><i class="fas fa-sticky-note me-2"></i> Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportTableBody">
+                            <tr>
+                                <td colspan="3" class="empty-state">
+                                    <i class="fas fa-chart-line" style="font-size: 3rem; opacity: 0.3;"></i>
+                                    <p style="margin-top: 10px;">No data available</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-edit me-2"></i> Edit Egg Out Entry
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editForm">
+                    <input type="hidden" id="editId">
+                    <div class="mb-3">
+                        <label for="editDate" class="form-label">Date</label>
+                        <input type="date" class="form-control" id="editDate" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editCount" class="form-label">Egg Out Count</label>
+                        <input type="number" class="form-control" id="editCount" min="0" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editNotes" class="form-label">Notes</label>
+                        <input type="text" class="form-control" id="editNotes">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveEditBtn">
+                    <i class="fas fa-save me-2"></i> Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentEditId = null;
+let editModal = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    editModal = new bootstrap.Modal(document.getElementById('editModal'));
+    
+    // Load dashboard data
+    loadDashboard();
+    
+    // Load entries
+    loadEntries();
+    
+    // Form submission
+    document.getElementById('eggoutForm').addEventListener('submit', handleFormSubmit);
+    
+    // Clear button
+    document.getElementById('clearBtn').addEventListener('click', clearForm);
+    
+    // Download Excel
+    document.getElementById('downloadExcelBtn').addEventListener('click', downloadExcel);
+    
+    // Save edit
+    document.getElementById('saveEditBtn').addEventListener('click', saveEdit);
+    
+    // Filter button for dashboard
+    document.getElementById('filterBtn').addEventListener('click', loadDashboard);
+    
+    // Reset filter button
+    document.getElementById('resetFilterBtn').addEventListener('click', function() {
+        document.getElementById('dashboardStartDate').value = '';
+        document.getElementById('dashboardEndDate').value = '';
+        loadDashboard();
+    });
+    
+    // Tab change events
+    document.getElementById('entries-tab').addEventListener('click', function() {
+        loadEntries();
+    });
+    
+    document.getElementById('report-tab').addEventListener('click', function() {
+        loadReportData();
+    });
+    
+    // Set today's date as default
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('entryDate').value = today;
+});
+
+function loadDashboard() {
+    const startDate = document.getElementById('dashboardStartDate').value;
+    const endDate = document.getElementById('dashboardEndDate').value;
+    
+    let url = '/eggout-dashboard/';
+    const params = new URLSearchParams();
+    if (startDate) params.append('start_date', startDate);
+    if (endDate) params.append('end_date', endDate);
+    if (params.toString()) url += '?' + params.toString();
+    
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('totalEggs').textContent = Math.round(data.total_eggs);
+                document.getElementById('totalEggOut').textContent = data.total_egg_out;
+                document.getElementById('balanceEggs').textContent = Math.round(data.balance_eggs);
+            }
+        })
+        .catch(error => console.error('Error:', error));
+}
+
+function loadEntries() {
+    fetch('/eggout-list/')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const tbody = document.getElementById('entriesTableBody');
+                tbody.innerHTML = '';
+                
+                if (data.entries.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="empty-state"><i class="fas fa-folder-open" style="font-size: 2rem; opacity: 0.3;"></i><p>No entries found</p></td></tr>';
+                    return;
+                }
+                
+                data.entries.forEach(entry => {
+                    const row = tbody.insertRow();
+                    row.innerHTML = `
+                        <td>${formatDate(entry.date)}</td>
+                        <td><strong>${entry.egg_out_count}</strong></td>
+                        <td>${entry.notes || '<span class="text-muted">-</span>'}</td>
+                        <td>
+                            <button class="btn btn-sm btn-info" onclick="openEditModal(${entry.id})" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteEntry(${entry.id})" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    `;
+                });
+            }
+        })
+        .catch(error => console.error('Error:', error));
+}
+
+function loadReportData() {
+    const startDate = document.getElementById('reportStartDate').value;
+    const endDate = document.getElementById('reportEndDate').value;
+    
+    let url = '/eggout-list/';
+    const params = new URLSearchParams();
+    if (startDate) params.append('start_date', startDate);
+    if (endDate) params.append('end_date', endDate);
+    if (params.toString()) url += '?' + params.toString();
+    
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const tbody = document.getElementById('reportTableBody');
+                tbody.innerHTML = '';
+                
+                if (data.entries.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" class="empty-state"><i class="fas fa-chart-line" style="font-size: 2rem; opacity: 0.3;"></i><p>No data available</p></td></tr>';
+                    return;
+                }
+                
+                data.entries.forEach(entry => {
+                    const row = tbody.insertRow();
+                    row.innerHTML = `
+                        <td>${formatDate(entry.date)}</td>
+                        <td><strong>${entry.egg_out_count}</strong></td>
+                        <td>${entry.notes || '<span class="text-muted">-</span>'}</td>
+                    `;
+                });
+            }
+        })
+        .catch(error => console.error('Error:', error));
+}
+
+function handleFormSubmit(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(document.getElementById('eggoutForm'));
+    
+    fetch('/eggout-save/', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        const msgEl = document.getElementById('formMessage');
+        if (data.success) {
+            msgEl.innerHTML = '<span class="badge bg-success"><i class="fas fa-check-circle me-1"></i> ' + data.message + '</span>';
+            clearForm();
+            loadEntries();
+            loadDashboard();
+            setTimeout(() => msgEl.innerHTML = '', 3000);
+        } else {
+            msgEl.innerHTML = '<span class="badge bg-danger"><i class="fas fa-exclamation-circle me-1"></i> ' + data.message + '</span>';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('formMessage').innerHTML = '<span class="badge bg-danger"><i class="fas fa-exclamation-circle me-1"></i> Error occurred</span>';
+    });
+}
+
+function openEditModal(id) {
+    fetch(`/eggout-get/${id}/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                currentEditId = id;
+                document.getElementById('editId').value = id;
+                document.getElementById('editDate').value = data.date;
+                document.getElementById('editCount').value = data.egg_out_count;
+                document.getElementById('editNotes').value = data.notes || '';
+                editModal.show();
+            }
+        })
+        .catch(error => console.error('Error:', error));
+}
+
+function saveEdit() {
+    const formData = new FormData();
+    formData.append('date', document.getElementById('editDate').value);
+    formData.append('egg_out_count', document.getElementById('editCount').value);
+    formData.append('notes', document.getElementById('editNotes').value);
+    
+    fetch('/eggout-save/', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            editModal.hide();
+            loadEntries();
+            loadDashboard();
+            showAlert('success', 'Entry updated successfully!');
+        } else {
+            showAlert('danger', 'Error: ' + data.message);
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function deleteEntry(id) {
+    if (confirm('Are you sure you want to delete this entry?')) {
+        fetch(`/eggout-delete/${id}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                loadEntries();
+                loadDashboard();
+                showAlert('success', 'Entry deleted successfully!');
+            } else {
+                showAlert('danger', 'Error: ' + data.message);
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+}
+
+function downloadExcel() {
+    const startDate = document.getElementById('reportStartDate').value;
+    const endDate = document.getElementById('reportEndDate').value;
+    
+    let url = '/eggout-download-excel/';
+    const params = new URLSearchParams();
+    if (startDate) params.append('start_date', startDate);
+    if (endDate) params.append('end_date', endDate);
+    if (params.toString()) url += '?' + params.toString();
+    
+    window.location.href = url;
+}
+
+function clearForm() {
+    document.getElementById('eggoutForm').reset();
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('entryDate').value = today;
+    document.getElementById('formMessage').innerHTML = '';
+    currentEditId = null;
+}
+
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
+}
+
+function showAlert(type, message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    const container = document.querySelector('.eggout-container');
+    container.insertBefore(alertDiv, container.firstChild);
+    
+    setTimeout(() => alertDiv.remove(), 4000);
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+
+{% endblock %}
+
